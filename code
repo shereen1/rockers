@@ -1,0 +1,271 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>pixi.js example 1</title>
+	<style>
+		body {
+			margin-left: 25%;
+			margin-right:20%;
+			padding: 0;
+			background:url('background_image.jpg') no-repeat center;
+			background-color:#000;
+		   	cursor:none;
+		}
+		#Pause{
+		float:left;
+		margin-left:-20%;
+		}
+	</style>
+	<script src="pixi.js"></script>
+	<script src="WebGLRenderer.js"></script>
+</head>
+<body>
+
+<div id="Pause">
+<img  src="pause_sm.png" alt="Smiley face" height="42" width="42" onclick="Pause();">
+<img id="image" src="music_sm.png" alt="Smiley face" height="42" width="42" onclick="MuteMusic();">
+</div>
+<img id="start" src="start.png" alt="Smiley face" style="margin-left:13%;position:fixed;margin-top:8%;" onclick="Game(50,800,10);">
+<label id="Score" title="0" style="position:fixed;color:white;font-size:30px;visibility:hidden;margin-left:25%;"></label>
+<audio id="audiotag1" src="LordOfTheRings.wav" preload="auto"></audio>
+<script>
+   var flag_Move = true;
+   var flag_CreateMonsters = true;
+   var flag_Bullet = true;
+   var Music = 1;
+   var Running = 1;
+
+   function Pause(){
+      if(Running == 1){
+ 	 flag_Move = false;
+	 flag_CreateMonsters = false;
+	 flag_Bullet = false;
+	 Running = 0 ;
+	 }else{
+	      	 flag_Move = true;
+	 flag_CreateMonsters = true;
+	 flag_Bullet = true;
+	 Running = 1;
+	 }
+   }
+
+   function MuteMusic(){
+     if(Music == 1){
+              document.getElementById('audiotag1').pause();
+              Music = 0;
+              document.getElementById("image").src="musicmute_sm.png";
+     }
+     else{
+              document.getElementById('audiotag1').play();
+              Music = 1;
+              document.getElementById("image").src="music_sm.png";
+     }
+   }
+
+   function Game(MonsterMovementSpeed,Speed,Increase){
+   document.getElementById('audiotag1').play();
+   document.getElementById('Score').style.visibility="visible";
+   document.getElementById('Score').innerHTML="0";
+            document.getElementById('start').style.visibility="hidden";
+
+//CREATE OBJECTS//////////
+	// create an new instance of a pixi stage
+	var Score = 0;
+	var Lifes = 4;
+//	var Speed = 300;
+//	var MonsterMovementSpeed = 20;
+	var interactive = true;
+	var stage = new PIXI.Stage(0x000000,interactive);
+
+	// create a renderer instance
+	var renderer = PIXI.autoDetectRenderer(screen.width/2, (screen.height - 150));
+
+	// add the renderer view element to the DOM
+	document.body.appendChild(renderer.view);
+
+	requestAnimFrame( animate );
+
+	// create a texture from an image path
+	var texture = PIXI.Texture.fromImage("ship.png");
+        var Life = PIXI.Texture.fromImage("life.png");
+        var BulletTexture = PIXI.Texture.fromImage("bullet.png");
+        var EnemyTexture =  PIXI.Texture.fromImage("monster.png");
+        var EnemyTexture2 = PIXI.Texture.fromImage("monster_2.png");
+        // create a background..
+	var background = PIXI.Sprite.fromImage("background1.gif");
+	// add background to stage..
+//	stage.addChild(background);
+
+	// create a new Sprite using the texture
+	var ship = new PIXI.Sprite(texture);
+        var Life1 = new PIXI.Sprite(Life);
+        var Life2 = new PIXI.Sprite(Life);
+        var Life3 = new PIXI.Sprite(Life);
+        var Life4 = new PIXI.Sprite(Life)
+        var GameOver = PIXI.Sprite.fromImage("gameover_big.jpg");
+	// center the sprites anchor point
+	ship.anchor.x = 0.5;
+	ship.anchor.y = 0.5;
+
+	// move the sprite the center of the screen
+	ship.position.x = 200;
+	ship.position.y = (screen.height - 250);
+        Life1.position.x = 650;
+        Life1.position.y = 10;
+        Life2.position.x = 620;
+        Life2.position.y = 10;
+        Life3.position.x = 590;
+        Life3.position.y = 10;
+        Life4.position.x = 560;
+        Life4.position.y = 10;
+
+        // make the button interactive..
+        ship.setInteractive(true);
+
+        window.onmousemove = handleMouseMove;
+        function handleMouseMove(event) {
+              event = event || window.event; // IE-ism
+              // event.clientX and event.clientY contain the mouse position
+        }
+
+        var Bullets = [];
+        PIXI.InteractionManager.prototype.onMouseDown = function(event)
+        {
+          if(flag_Bullet){
+             var Bullet = new PIXI.Sprite(BulletTexture);
+             Bullet.position.x = ship.position.x - 10;
+             Bullet.position.y = ship.position.y - 50;
+             Bullets.push(Bullet);
+             stage.addChild(Bullet);
+          }
+        }
+
+        var Monsters = [];
+        function addMonster()
+        {
+         if(flag_CreateMonsters){
+                 var X = Math.floor((Math.random()*(renderer.width)));
+                 var Monster =  new PIXI.Sprite(EnemyTexture);
+                 Monster.position.x = (X - 10);
+                 Monster.position.y = -10;
+                 Monsters.push(Monster);
+                 stage.addChild(Monster);
+                 if(Score >=100){
+                   X = Math.floor((Math.random()*(renderer.width)));
+                   var Monster2 =  new PIXI.Sprite(EnemyTexture2);
+                   Monster2.position.x = (X - 10);
+                   Monster2.position.y = -10;
+                   Monsters.push(Monster2);
+                   stage.addChild(Monster2);
+                 }
+             }
+        }
+
+        function CollisionWithBullet(){
+	         for(var i = 0;i< Monsters.length;i++){
+	                 for(var j = 0;j< Bullets.length;j++){
+	                  var Bullet_A = Bullets[j];
+	                  var Monster_A = Monsters[i];
+	                  //alert(Bullet_A.position.y+ ' ' + Monster_A.position.y);
+	                         if((Bullet_A.position.x < (Monster_A.position.x + Monster_A.width)) && ((Bullet_A.position.x + Bullet_A.width) > Monster_A.position.x) && (Bullet_A.position.y < (Monster_A.position.y + Monster_A.height)) && ((Bullet_A.position.y + Bullet_A.height) > Monster_A.position.y)){
+                                         Score += Increase;
+                                         document.getElementById('Score').innerHTML=Score;
+                                         Monsters.splice(i, 1);
+                                         Bullets.splice(j, 1);
+                                         stage.removeChild(Bullet_A);
+	                                 stage.removeChild(Monster_A);
+                                 }
+	                 }
+	         }
+	}
+
+       function CollisionWithShip(){
+	         for(var i = 0;i< Monsters.length;i++){
+	                  var Monster_A = Monsters[i];
+	                         if((ship.position.x < (Monster_A.position.x + Monster_A.width)) && ((ship.position.x + ship.width) > Monster_A.position.x) && (ship.position.y < (Monster_A.position.y + Monster_A.height)) && ((ship.position.y + ship.height) > Monster_A.position.y)){
+                                         if(Lifes == 4){
+                                                  stage.removeChild(Life1);
+                                         }else if(Lifes == 3){
+                                               stage.removeChild(Life2);
+                                         }
+                                         else if(Lifes == 2){
+                                              stage.removeChild(Life3);
+                                         }
+                                         else if (Lifes == 1){
+                                              stage.removeChild(Life4);
+
+                                              stage.removeChild(ship);
+                                              flag_Bullet = false;
+                                              stage.addChild(GameOver);
+                         	              document.body.removeChild(renderer.view);
+                         	              MuteMusic()
+                                         }
+
+                                         Lifes -= 1;
+                                         Monsters.splice(i, 1);
+	                                 stage.removeChild(Monster_A);
+                                 }
+	                 }
+	}
+
+        PIXI.InteractionManager.prototype.onMouseMove = function(event)
+        {
+        if(flag_Move){
+          var positionX = (event.clientX - 300);
+          if(positionX < 60){
+             ship.position.x = 60;
+          }
+          else if (positionX > 630){
+             ship.position.x = 630;
+          }
+          else{
+             ship.position.x = positionX;
+          }
+          }
+        }
+
+        function MoveMonster(){
+        if(flag_Move){
+            for(var i =0;i<Monsters.length;i++){
+              var b = Monsters[i];
+              b.position.y +=10;
+            }
+            }
+        }
+
+        function ScoreResult(){
+        	  if(Score >= 20){
+                                   MonsterMovementSpeed = 10;
+                                  Speed = 100;
+	         }
+        }
+	stage.addChild(ship);
+        stage.addChild(Life1);
+        stage.addChild(Life2);
+        stage.addChild(Life3);
+        stage.addChild(Life4);
+
+
+
+        setInterval ( addMonster, Speed );
+        setInterval ( MoveMonster,MonsterMovementSpeed);
+        setInterval ( CollisionWithBullet ,30);
+        setInterval ( CollisionWithShip, 30);
+	function animate() {
+	    requestAnimFrame( animate );
+            for(var i =0;i<Bullets.length;i++){
+              var b = Bullets[i];
+              b.position.y -=5;
+            }
+
+             //setInterval ( addMonster, Speed );
+            ScoreResult();
+	    // render the stage
+               renderer.render(stage);
+	}
+	}
+	
+
+</script>
+</body>
+</html>
